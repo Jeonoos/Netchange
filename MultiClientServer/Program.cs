@@ -33,8 +33,8 @@ namespace MultiClientServer
             }
             Nodes.Add(MijnPoort);
             while (Buren.Count < args.Length - 1) { }
-                foreach (KeyValuePair<int, Connection> buur in Buren)
-                {
+            foreach (KeyValuePair<int, Connection> buur in Buren)
+            {
                 foreach (int node in Nodes)
                 {
                     Console.WriteLine(string.Format("adding {0} {1}", buur.Key, node));
@@ -61,12 +61,15 @@ namespace MultiClientServer
                 {
                     case "R":
                         Console.WriteLine("routing table");
-                        foreach (KeyValuePair<int, int> node in PrefBuur)
+                        lock (prefBuurLock)
                         {
-                            if (node.Value == MijnPoort)
-                                Console.WriteLine(string.Format("{0} {1} {2}", node.Key, Afstand[node.Key], "local"));
-                            else
-                                Console.WriteLine(string.Format("{0} {1} {2}", node.Key, Afstand[node.Key], node.Value));
+                            foreach (int node in Nodes)
+                            {
+                                if (node == MijnPoort)
+                                    Console.WriteLine(string.Format("{0} {1} {2}", node, Afstand[node], "local"));
+                                else
+                                    Console.WriteLine(string.Format("{0} {1} {2}", node, Afstand[node], PrefBuur[node]));
+                            }
                         }
                         break;
                     case "B":
@@ -94,6 +97,23 @@ namespace MultiClientServer
                                 Buren[int.Parse(splitInput[1])].Write.WriteLine(MyDistance(node, Afstand[node]));
                             }
                         }
+                        break;
+                    case "D":
+                        int disconnectedNode = int.Parse(splitInput[1]);
+                        if (Buren.ContainsKey(disconnectedNode))
+                        {
+                            lock (prefBuurLock)
+                            {
+                                Buren[disconnectedNode].Write.WriteLine("D " + MijnPoort);
+                                Buren.Remove(disconnectedNode);
+                                foreach (int node in Nodes)
+                                {
+                                    Recompute(node);
+                                }
+                            }
+                        }
+                        else
+                            Console.WriteLine(string.Format("Poort {0} is niet bekend", disconnectedNode));
                         break;
                     default: break;
                 }
@@ -136,6 +156,14 @@ namespace MultiClientServer
                     Afstand[port] = d;
                     Console.WriteLine("oude afstand: " + oudeAfstand + ", nieuwe afstand: " + d);
                     PrefBuur[port] = (prefN == -1) ? port : prefN;
+                    if (d >= Netwerkgrootte) {
+                        Nodes.Remove(port);
+                        Afstand.Remove(port);
+                        foreach (KeyValuePair<int, Connection> buur in Buren)
+                        {
+                            buur.Value.Write.WriteLine(MyDistance(port, 20));
+                        }
+                    }
                 }
                 if (Afstand[port] != oudeAfstand)
                 {

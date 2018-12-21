@@ -97,6 +97,23 @@ namespace MultiClientServer
                                 }
                             }
                             break;
+                        case "D":
+                            port = int.Parse(args[0]);
+                            if (Program.Buren.ContainsKey(port))
+                            {
+                                lock (Program.prefBuurLock)
+                                {
+                                    Program.Buren.Remove(port);
+
+                                    foreach (int node in Program.Nodes)
+                                    {
+                                        Program.Recompute(node);
+                                    }
+                                }
+                            }
+                            else
+                                Console.WriteLine(string.Format("Poort {0} is niet bekend", port));
+                            break;
                     }
                 }
         }
