@@ -82,12 +82,11 @@ namespace MultiClientServer
                         else
                         {
                             int port = int.Parse(splitInput[1]);
-                            if (!Nodes.Contains(port))
-                                Nodes.Add(port);
+
                             Buren.Add(int.Parse(splitInput[1]), new Connection(int.Parse(splitInput[1])));
                             Buren[int.Parse(splitInput[1])].Write.WriteLine(string.Format("C {0}", MijnPoort));
-                            if (!Nodes.Contains(int.Parse(splitInput[1])))
-                                Nodes.Add(int.Parse(splitInput[1]));
+                            //if (!Nodes.Contains(int.Parse(splitInput[1])))
+                            //    Nodes.Add(int.Parse(splitInput[1]));
                             while (!Buren[int.Parse(splitInput[1])].ready) { }
 
                             foreach (int node in Nodes)
@@ -111,6 +110,8 @@ namespace MultiClientServer
             }
             else
             {
+                if (!Nodes.Contains(port))
+                    Nodes.Add(port);
                 int oudeAfstand = Afstand[port];
                 int d = Netwerkgrootte;
                 int prefN = -1;

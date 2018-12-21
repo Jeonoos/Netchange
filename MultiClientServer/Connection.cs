@@ -66,8 +66,10 @@ namespace MultiClientServer
                             {
                                 if (!Program.Nodes.Contains(int.Parse(args[1])))
                                     Program.Nodes.Add(int.Parse(args[1]));
+
                                 if (!Program.Afstand.ContainsKey(int.Parse(args[1])))
                                     Program.Afstand[int.Parse(args[1])] = Program.Netwerkgrootte;
+
                                 Program.BuurAfstand[new Tuple<int, int>(int.Parse(args[0]), int.Parse(args[1]))] = int.Parse(args[2]);
                                 Program.Recompute(int.Parse(args[1]));
                             }
@@ -84,8 +86,8 @@ namespace MultiClientServer
                             break;
                         case "C":
                             int port = int.Parse(args[0]);
-                            if (!Program.Nodes.Contains(port))
-                                Program.Nodes.Add(port);
+                            //if (!Program.Nodes.Contains(port))
+                            //    Program.Nodes.Add(port);
                             while (!Program.Buren.ContainsKey(port)) { }
                             lock (Program.prefBuurLock)
                             {
