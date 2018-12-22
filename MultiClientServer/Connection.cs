@@ -52,7 +52,7 @@ namespace MultiClientServer
         // Deze loop leest wat er binnenkomt en print dit
         public void ReaderThread() {
             ready = true;
-            while (Program.Initializing) { }
+            lock (Program.prefBuurLock) { }
             try
             {
                 while (true) {

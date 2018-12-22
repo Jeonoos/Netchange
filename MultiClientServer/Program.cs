@@ -21,37 +21,38 @@ namespace MultiClientServer
             if (args.Length > 0)
                 MijnPoort = int.Parse(args[0]);
             Console.WriteLine("ik ben poort " + MijnPoort);
-
-            new Server(MijnPoort);
-            for (int i = 1; i < args.Length; i++)
+            lock (prefBuurLock)
             {
-                int node = int.Parse(args[i]);
-                Nodes.Add(node);
-                Afstand[node] = Netwerkgrootte;
-                if (node > MijnPoort)
-                    Buren.Add(node, new Connection(node));
-            }
-            Nodes.Add(MijnPoort);
-            while (Buren.Count < args.Length - 1) { }
-            foreach (KeyValuePair<int, Connection> buur in Buren)
-            {
-                foreach (int node in Nodes)
+                new Server(MijnPoort);
+                for (int i = 1; i < args.Length; i++)
                 {
-                    Console.WriteLine(string.Format("adding {0} {1}", buur.Key, node));
-                    if (!BuurAfstand.ContainsKey(new Tuple<int, int>(buur.Key, node)))
-                        BuurAfstand[new Tuple<int, int>(buur.Key, node)] = Netwerkgrootte;
-                    else
-                        Console.WriteLine("yeet");
-
+                    int node = int.Parse(args[i]);
+                    Nodes.Add(node);
+                    Afstand[node] = Netwerkgrootte;
+                    if (node > MijnPoort)
+                        Buren.Add(node, new Connection(node));
                 }
-                Afstand[MijnPoort] = 0;
-                PrefBuur[MijnPoort] = MijnPoort;
-            }
-            foreach (KeyValuePair<int, Connection> buur in Buren)
-            {
-                buur.Value.Write.WriteLine(MyDistance(MijnPoort, 0));
-            }
+                Nodes.Add(MijnPoort);
+                while (Buren.Count < args.Length - 1) { }
+                foreach (KeyValuePair<int, Connection> buur in Buren)
+                {
+                    foreach (int node in Nodes)
+                    {
+                        Console.WriteLine(string.Format("adding {0} {1}", buur.Key, node));
+                        if (!BuurAfstand.ContainsKey(new Tuple<int, int>(buur.Key, node)))
+                            BuurAfstand[new Tuple<int, int>(buur.Key, node)] = Netwerkgrootte;
+                        else
+                            Console.WriteLine("yeet");
 
+                    }
+                    Afstand[MijnPoort] = 0;
+                    PrefBuur[MijnPoort] = MijnPoort;
+                }
+                foreach (KeyValuePair<int, Connection> buur in Buren)
+                {
+                    buur.Value.Write.WriteLine(MyDistance(MijnPoort, 0));
+                }
+            }
             Initializing = false;
             while (true)
             {
@@ -89,7 +90,7 @@ namespace MultiClientServer
                             Buren.Add(int.Parse(splitInput[1]), new Connection(int.Parse(splitInput[1])));
                             Buren[int.Parse(splitInput[1])].Write.WriteLine(string.Format("C {0}", MijnPoort));
                             //if (!Nodes.Contains(int.Parse(splitInput[1])))
-                            //    Nodes.Add(int.Parse(splitInput[1]));
+                            Nodes.Add(int.Parse(splitInput[1]));
                             while (!Buren[int.Parse(splitInput[1])].ready) { }
 
                             foreach (int node in Nodes)
@@ -106,6 +107,11 @@ namespace MultiClientServer
                             {
                                 Buren[disconnectedNode].Write.WriteLine("D " + MijnPoort);
                                 Buren.Remove(disconnectedNode);
+                                foreach (var item in Buren.Keys)
+                                {
+                                    if (BuurAfstand[new Tuple<int, int>(item, disconnectedNode)] > Afstand[disconnectedNode])
+                                        BuurAfstand.Remove(new Tuple<int, int>(item, disconnectedNode));
+                                }
                                 foreach (int node in Nodes)
                                 {
                                     Recompute(node);
@@ -131,7 +137,10 @@ namespace MultiClientServer
             else
             {
                 if (!Nodes.Contains(port))
+                {
                     Nodes.Add(port);
+                    Afstand[port] = Netwerkgrootte;
+                }
                 int oudeAfstand = Afstand[port];
                 int d = Netwerkgrootte;
                 int prefN = -1;
@@ -156,13 +165,9 @@ namespace MultiClientServer
                     Afstand[port] = d;
                     Console.WriteLine("oude afstand: " + oudeAfstand + ", nieuwe afstand: " + d);
                     PrefBuur[port] = (prefN == -1) ? port : prefN;
-                    if (d >= Netwerkgrootte) {
+                    if (d >= Netwerkgrootte)
+                    {
                         Nodes.Remove(port);
-                        Afstand.Remove(port);
-                        foreach (KeyValuePair<int, Connection> buur in Buren)
-                        {
-                            buur.Value.Write.WriteLine(MyDistance(port, 20));
-                        }
                     }
                 }
                 if (Afstand[port] != oudeAfstand)
